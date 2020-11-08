@@ -19,7 +19,7 @@ class FirebaseMusicSource @Inject constructor(private val musicDatabase: MusicDa
     private val onReadyListeners = mutableListOf<(Boolean) -> Unit>()
 
 
-    suspend fun fetchMediaData = withContext(Dispatchers.IO) {
+    suspend fun fetchMediaData() = withContext(Dispatchers.IO) {
         state = State.STATE_INITIALIZING
         val allSongs = musicDatabase.getAllSongs()
         songs = allSongs.map {
@@ -48,7 +48,7 @@ class FirebaseMusicSource @Inject constructor(private val musicDatabase: MusicDa
                 .setIconUri(song.description.iconUri)
                 .build()
         MediaBrowserCompat.MediaItem(desc, FLAG_PLAYABLE)
-    }
+    }.toMutableList()
 
     //create plyer list of mediasources that contains information for exoplayer to listen first song then automaticaly second and so on
     fun asMediaSource(dataSourceFactory: DefaultDataSourceFactory): ConcatenatingMediaSource {
@@ -77,6 +77,7 @@ class FirebaseMusicSource @Inject constructor(private val musicDatabase: MusicDa
         }
     }
 
+    //perform this when particular music source is ready
     fun whenReady(action: (Boolean)  -> Unit): Boolean {
         if(state == State.STATE_CREATED || state == State.STATE_INITIALIZING) {
             onReadyListeners += action
