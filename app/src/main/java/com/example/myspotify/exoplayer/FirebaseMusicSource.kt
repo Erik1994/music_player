@@ -41,7 +41,7 @@ class FirebaseMusicSource @Inject constructor(private val musicDatabase: MusicDa
 
     fun asMediaItems() = songs.map {song ->
         val desc = MediaDescriptionCompat.Builder()
-                .setMediaUri(song.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_URI))
+                .setMediaUri(song.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_URI).toUri())
                 .setTitle(song.description.title)
                 .setSubtitle(song.description.subtitle)
                 .setMediaId(song.description.mediaId)
