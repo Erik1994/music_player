@@ -2,14 +2,18 @@ package com.example.myspotify.ui
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.activity.viewModels
+import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.RequestManager
 import com.example.myspotify.R
 import com.example.myspotify.adapters.SwipeSongAdapter
 import com.example.myspotify.data.entity.Song
+import com.example.myspotify.exoplayer.isPlaying
 import com.example.myspotify.exoplayer.toSong
 import com.example.myspotify.ui.viewmodel.MainViewModel
 import com.example.myspotify.util.Status
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
@@ -26,11 +30,34 @@ class MainActivity : AppCompatActivity() {
 
     private var currentlyPlayingSong: Song? = null
 
+    private var playbackState: PlaybackStateCompat? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         subscribeToObservers()
         vpSong.adapter = swipeSongAdapter
+        setClickListeners()
+    }
+
+    private fun setClickListeners() {
+        ivPlayPause.setOnClickListener {
+            currentlyPlayingSong?.let {
+                mainViewModel.playOrToggleSong(it, true)
+            }
+        }
+
+
+        vpSong.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                if(playbackState?.isPlaying == true) {
+                    mainViewModel.playOrToggleSong(swipeSongAdapter.songs[position])
+                } else {
+                    currentlyPlayingSong = swipeSongAdapter.songs[position]
+                }
+            }
+        })
     }
 
     private fun switchViewPagerToCurrentSong(song: Song) {
@@ -41,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //calls once when app opens
     private fun subscribeToObservers() {
         mainViewModel.mediaItems.observe(this) {
             it?.let { result ->
@@ -64,10 +92,41 @@ class MainActivity : AppCompatActivity() {
         mainViewModel.currentlyPlayingSong.observe(this) {
             if(it == null) return@observe
             currentlyPlayingSong = it.toSong()
-            glide.load(currentlyPlayingSong.imageUrl)
+            glide.load(currentlyPlayingSong?.imageUrl)
                 .into(ivCurSongImage)
             switchViewPagerToCurrentSong(currentlyPlayingSong ?: return@observe)
+        }
 
+        //calls every time when playback state chnages pause, play etc.
+        mainViewModel.playbackState.observe(this) {
+            playbackState = it
+            ivPlayPause.setImageResource(
+                if(playbackState?.isPlaying == true) R.drawable.ic_pause else R.drawable.ic_play
+            )
+        }
+
+
+        //show error snackbar once. When rotate screen not show snackbar again.
+        mainViewModel.isConected.observe(this) {
+            it?.getContentIfNotHandled()?.let {result ->
+                when(result.status) {
+                    Status.ERROR -> Snackbar.make(rootLayout, result.message ?:
+                    "An unknown error occured",
+                    Snackbar.LENGTH_LONG).show()
+                    else -> Unit
+                }
+            }
+        }
+
+        mainViewModel.networkError.observe(this) {
+            it?.getContentIfNotHandled()?.let {result ->
+                when(result.status) {
+                    Status.ERROR -> Snackbar.make(rootLayout, result.message ?:
+                    "An unknown error occured",
+                        Snackbar.LENGTH_LONG).show()
+                    else -> Unit
+                }
+            }
         }
     }
 }
