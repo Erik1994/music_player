@@ -46,8 +46,10 @@ class SongFragment: Fragment(R.layout.fragment_song) {
     }
 
     private fun setClickListeners() {
-        currentlyPlayingSong?.let {
-            mainViewModel.playOrToggleSong(it, true)
+        ivPlayPauseDetail.setOnClickListener {
+            currentlyPlayingSong?.let {
+                mainViewModel.playOrToggleSong(it, true)
+            }
         }
 
         ivSkipPrevious.setOnClickListener {
