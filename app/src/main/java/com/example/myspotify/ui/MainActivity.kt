@@ -4,6 +4,9 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.activity.viewModels
+import androidx.core.view.isVisible
+import androidx.navigation.NavController
+import androidx.navigation.findNavController
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.RequestManager
 import com.example.myspotify.R
@@ -20,6 +23,8 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    private lateinit var navController: NavController
+
     private val mainViewModel: MainViewModel by viewModels()
 
     @Inject
@@ -35,6 +40,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        if(!this::navController.isInitialized) {
+            navController = this.findNavController(R.id.navHostFragment)
+        }
         subscribeToObservers()
         vpSong.adapter = swipeSongAdapter
         setClickListeners()
@@ -58,6 +66,36 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+
+
+        swipeSongAdapter.setItemClickListener {
+            navController.navigate(R.id.globalActionToSOngFragment)
+        }
+
+        navController.addOnDestinationChangedListener {_, destination, _ ->
+            when(destination.id) {
+                R.id.songFragment -> hideBottomBar()
+                R.id.homeFragment -> showBottomBar()
+                else -> Unit
+            }
+
+        }
+    }
+
+    override fun onNavigateUp(): Boolean {
+        return navController.navigateUp()
+    }
+
+    private fun hideBottomBar() {
+        ivCurSongImage.isVisible = false
+        vpSong.isVisible = false
+        ivPlayPause.isVisible = false
+    }
+
+    private fun showBottomBar() {
+        ivCurSongImage.isVisible = true
+        vpSong.isVisible = true
+        ivPlayPause.isVisible = true
     }
 
     private fun switchViewPagerToCurrentSong(song: Song) {

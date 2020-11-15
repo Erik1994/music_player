@@ -7,4 +7,12 @@
         android:id="@+id/homeFragment"
         android:name="com.example.myspotify.ui.fragment.HomeFragment"
         android:label="HomeFragment" />
+    <fragment
+        android:id="@+id/songFragment"
+        android:name="com.example.myspotify.ui.fragment.SongFragment"
+        android:label="SongFragment" />
+
+
+    <action android:id="@+id/globalActionToSOngFragment"
+        app:destination="@+id/songFragment"/>
 </navigation>
